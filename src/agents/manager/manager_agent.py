@@ -1,117 +1,64 @@
 from typing import List
-import json
 
 from src.agents.base.base_agent import BaseAgent
-from src.core.task import Task
+from src.core.task import Task, TaskStatus
+from src.workflows.task_planner import TaskPlanner
 
 
 class ManagerAgent(BaseAgent):
-    """
-    Agentic Manager Agent
-    """
+    """Plans work, assigns subtasks, and aggregates results."""
 
-    def __init__(self, registry, llm=None):
+    def __init__(self, registry, llm=None, planner=None):
         super().__init__(
             name="Manager Agent",
-            description="AI Manager Agent",
+            description="Plans and delegates business automation tasks",
             tools=[],
             llm=llm
         )
-
         self.registry = registry
+        self.planner = planner or TaskPlanner(registry=registry, llm=llm)
 
     def think(self, task: Task) -> List[Task]:
-        """
-        AI Task Planning
-        """
+        return self.planner.plan(task)
 
-        agent_list = self.registry.list_agents()
-
-        prompt = f"""
-You are a Manager Agent.
-
-Available agents:
-{agent_list}
-
-Break the task into subtasks.
-
-Return JSON:
-
-[
-    {{
-        "agent": "agent_name",
-        "task": "subtask"
-    }}
-]
-
-Task:
-{task.description}
-"""
-
-        response = self.call_llm(prompt)
-
-        try:
-            plan = json.loads(response)
-        except ValueError:
-            plan = [{"agent": "db", "task": task.description}]
-
-        subtasks = []
-
-        for item in plan:
-            subtask = Task(
-                description=item["task"],
-                agent=item["agent"]
-            )
-
-            subtasks.append(subtask)
-
-        return subtasks
-
-    def assign(self, tasks: List[Task]):
-        """
-        Assign tasks to agents
-        """
-
+    def assign(self, tasks: List[Task]) -> List[Task]:
         results = []
-
         for task in tasks:
-            agent_name = task.agent
-
-            agent = self.registry.get(agent_name)
-
+            agent = self.registry.get(task.agent)
             if agent is None:
-                self.error(f"Agent not found: {agent_name}")
-                task.set_status("failed")
-                task.set_result({"error": f"Agent not found: {agent_name}"})
+                task.set_error(f"Agent not found: {task.agent}")
+                results.append(task)
                 continue
 
-            self.info(f"Assigning to {agent_name}")
-            task.set_status("running")
-            result = agent.run(task)
-            task.set_result(result)
+            self.info(f"Assigning task to {task.agent}")
+            try:
+                agent.run(task)
+            except Exception as exc:
+                task.set_error(str(exc))
             results.append(task)
-
         return results
 
     def run(self, task: Task):
-        """
-        Main Manager Execution
-        """
-
         self.info("Manager started")
+        task.set_status(TaskStatus.RUNNING)
 
-        # Step 1: Plan
         subtasks = self.think(task)
-
         for subtask in subtasks:
-            task.add_subtask(subtask)
-
-        # Step 2: Assign
+            if subtask.id != task.id:
+                task.add_subtask(subtask)
         results = self.assign(subtasks)
 
-        # Step 3: Aggregate
-        task.set_result([r.to_dict() for r in results])
-
+        failed = [item for item in results if item.status == TaskStatus.FAILED]
+        summary = {
+            "total": len(results),
+            "completed": len(results) - len(failed),
+            "failed": len(failed),
+            "results": [item.to_dict() for item in results],
+        }
+        if failed:
+            task.set_error("One or more subtasks failed")
+            task.result = summary
+        else:
+            task.set_result(summary)
         self.info("Manager finished")
-
-        return task.to_dict()
+        return summary

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ArkAgents Admin Console</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="icon-send" viewBox="0 0 24 24">
+        <path d="M22 2 11 13"></path><path d="m22 2-7 20-4-9-9-4 20-7Z"></path>
+      </symbol>
+      <symbol id="icon-database" viewBox="0 0 24 24">
+        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5"></path><path d="M3 12c0 1.7 4 3 9 3s9-1.3 9-3"></path>
+      </symbol>
+      <symbol id="icon-bolt" viewBox="0 0 24 24">
+        <path d="m13 2-9 13h8l-1 7 9-13h-8l1-7Z"></path>
+      </symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="m9 12 2 2 4-4"></path>
+      </symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24">
+        <rect x="9" y="9" width="13" height="13" rx="2"></rect><rect x="2" y="2" width="13" height="13" rx="2"></rect>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M21 12a9 9 0 0 1-15.5 6.2"></path><path d="M3 12A9 9 0 0 1 18.5 5.8"></path><path d="M3 19v-6h6"></path><path d="M21 5v6h-6"></path>
+      </symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24">
+        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 1 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 1 1 19.9 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.7 1Z"></path>
+      </symbol>
+    </svg>
+
+    <div class="shell">
+      <aside class="sidebar" aria-label="Primary">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div>
+            <div class="brand-name">ArkAgents</div>
+            <div class="brand-subtitle">Operations Console</div>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <a class="nav-item active" href="#command">Command</a>
+          <a class="nav-item" href="#database">Database</a>
+          <a class="nav-item" href="#agents">Agents</a>
+          <a class="nav-item" href="#results">Results</a>
+        </nav>
+
+        <div class="side-panel">
+          <div class="panel-label">Runtime</div>
+          <div class="runtime-row">
+            <span>API</span>
+            <strong id="apiStatus">Checking</strong>
+          </div>
+          <div class="runtime-row">
+            <span>LLM</span>
+            <strong id="llmStatus">Manual</strong>
+          </div>
+          <div class="runtime-row">
+            <span>Guard</span>
+            <strong>Writes off</strong>
+          </div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Back Office Control Plane</p>
+            <h1>Agent command center</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-button" id="refreshButton" type="button" aria-label="Refresh status" title="Refresh status">
+              <svg><use href="#icon-refresh"></use></svg>
+            </button>
+            <button class="ghost-button" id="seedButton" type="button">
+              <svg><use href="#icon-database"></use></svg>
+              Seed demo DB
+            </button>
+          </div>
+        </header>
+
+        <section class="metrics" aria-label="System metrics">
+          <article class="metric-card">
+            <span>Registered agents</span>
+            <strong id="agentCount">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Tasks run</span>
+            <strong id="taskCount">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Last status</span>
+            <strong id="lastStatus">Idle</strong>
+          </article>
+          <article class="metric-card">
+            <span>Rows returned</span>
+            <strong id="rowCount">0</strong>
+          </article>
+        </section>
+
+        <div class="grid">
+          <section class="panel command-panel" id="command">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Command</p>
+                <h2>Dispatch a task</h2>
+              </div>
+              <span class="status-pill" id="runState">Ready</span>
+            </div>
+
+            <label class="field">
+              <span>Instruction</span>
+              <textarea id="taskInput" rows="5" spellcheck="true">Get customer count from database</textarea>
+            </label>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>Agent</span>
+                <select id="agentSelect">
+                  <option value="">Auto route</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Database path</span>
+                <input id="dbPathInput" value="arkagents.db" autocomplete="off">
+              </label>
+            </div>
+
+            <label class="field">
+              <span>SQL override</span>
+              <input id="sqlInput" placeholder="SELECT COUNT(*) AS count FROM customer">
+            </label>
+
+            <label class="field">
+              <span>Metadata</span>
+              <textarea id="metadataInput" rows="4" placeholder="to=client@example.com&#10;subject=Proposal"></textarea>
+            </label>
+
+            <div class="toggle-grid" aria-label="Execution controls">
+              <label class="toggle">
+                <input id="useLlmInput" type="checkbox">
+                <span>Use LLM planner</span>
+              </label>
+              <label class="toggle danger">
+                <input id="allowWritesInput" type="checkbox">
+                <span>Allow DB writes</span>
+              </label>
+            </div>
+
+            <div class="button-row">
+              <button class="primary-button" id="runButton" type="button">
+                <svg><use href="#icon-send"></use></svg>
+                Run task
+              </button>
+              <button class="ghost-button" id="clearButton" type="button">Clear</button>
+            </div>
+          </section>
+
+          <section class="panel" id="database">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Database</p>
+                <h2>Access scope</h2>
+              </div>
+              <button class="icon-button" id="schemaButton" type="button" aria-label="Load schema" title="Load schema">
+                <svg><use href="#icon-database"></use></svg>
+              </button>
+            </div>
+            <div class="security-strip">
+              <svg><use href="#icon-shield"></use></svg>
+              <span>Writes require explicit approval per request.</span>
+            </div>
+            <div id="schemaView" class="schema-view">
+              <div class="empty-state">No schema loaded</div>
+            </div>
+          </section>
+
+          <section class="panel" id="agents">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Agents</p>
+                <h2>Worker roster</h2>
+              </div>
+              <svg class="header-icon"><use href="#icon-bolt"></use></svg>
+            </div>
+            <div id="agentList" class="agent-list"></div>
+          </section>
+
+          <section class="panel results-panel" id="results">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Results</p>
+                <h2>Execution output</h2>
+              </div>
+              <button class="icon-button" id="copyButton" type="button" aria-label="Copy JSON" title="Copy JSON">
+                <svg><use href="#icon-copy"></use></svg>
+              </button>
+            </div>
+
+            <div class="tabs" role="tablist">
+              <button class="tab active" data-tab="table" type="button">Table</button>
+              <button class="tab" data-tab="json" type="button">JSON</button>
+              <button class="tab" data-tab="timeline" type="button">Timeline</button>
+            </div>
+
+            <div class="tab-panel active" id="tablePanel">
+              <div class="table-wrap">
+                <table id="resultTable">
+                  <thead></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div id="tableEmpty" class="empty-state">Run a task to populate results</div>
+            </div>
+
+            <div class="tab-panel" id="jsonPanel">
+              <pre id="jsonOutput">{}</pre>
+            </div>
+
+            <div class="tab-panel" id="timelinePanel">
+              <div id="timeline" class="timeline"></div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

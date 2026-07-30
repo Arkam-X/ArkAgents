@@ -7,3 +7,6 @@ venv/
 .DS_Store
 arkagents.db
 *.cfg
+.test_tmp/
+memory.jsonl
+skills/

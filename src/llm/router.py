@@ -1,44 +1,82 @@
-from typing import Optional
+import json
+import re
+from typing import Any, Dict, Optional
+
+from src.llm.openai_client import OpenAIClient
 from src.llm.openrouter_client import OpenRouterClient
 from src.llm.gemini_client import GeminiClient
 
 
 class LLMRouter:
-    """
-    LLM Router
+    """Routes prompts across configured LLM providers with local fallback."""
 
-    Routes requests to different LLM providers
-    """
-
-    def __init__(self):
+    def __init__(self, enabled: bool = True):
+        self.enabled = enabled
+        self.openai = OpenAIClient()
         self.openrouter = OpenRouterClient()
         self.gemini = GeminiClient()
+        self.last_error: Optional[str] = None
 
     def generate(
         self,
         prompt: str,
         task_type: Optional[str] = "reasoning"
-    ):
-        """
-        Route request based on task type
-        """
+    ) -> str:
+        if not self.enabled:
+            self.last_error = "LLM routing is disabled"
+            return ""
 
-        # Reasoning tasks
-        if task_type == "reasoning":
+        clients = self._route(task_type or "reasoning")
+        errors = []
+
+        for client in clients:
+            if not getattr(client, "available", False):
+                continue
             try:
-                return self.openrouter.generate(prompt)
-            except Exception:
-                return self.gemini.generate(prompt)
+                return client.generate(prompt)
+            except Exception as exc:
+                errors.append(f"{client.__class__.__name__}: {exc}")
 
-        # Cheap / fast tasks
-        elif task_type == "fast":
-            try:
-                return self.gemini.generate(prompt)
-            except Exception:
-                return self.openrouter.generate(prompt)
+        self.last_error = "; ".join(errors) or "No LLM provider configured"
+        return ""
 
-        # Default fallback
+    def generate_json(
+        self,
+        prompt: str,
+        task_type: Optional[str] = "reasoning",
+        default: Any = None,
+    ) -> Any:
+        content = self.generate(prompt, task_type=task_type)
+        if not content:
+            return default
         try:
-            return self.openrouter.generate(prompt)
-        except Exception:
-            return self.gemini.generate(prompt)
+            return json.loads(content)
+        except json.JSONDecodeError:
+            match = re.search(r"```(?:json)?\s*(.*?)```", content, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group(1))
+                except json.JSONDecodeError:
+                    return default
+            match = re.search(r"(\{.*\}|\[.*\])", content, re.DOTALL)
+            if not match:
+                return default
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                return default
+
+    def status(self) -> Dict[str, bool]:
+        return {
+            "enabled": self.enabled,
+            "openai": self.openai.available,
+            "openrouter": self.openrouter.available,
+            "gemini": self.gemini.available,
+        }
+
+    def _route(self, task_type: str):
+        if task_type in {"cheap", "fast"}:
+            return [self.gemini, self.openrouter, self.openai]
+        if task_type in {"coding", "reasoning"}:
+            return [self.openai, self.openrouter, self.gemini]
+        return [self.openrouter, self.openai, self.gemini]

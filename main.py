@@ -1,66 +1,72 @@
+import argparse
+import json
+
 from dotenv import load_dotenv
 
-load_dotenv()
-
-from src.core.agent_registry import AgentRegistry
-from src.llm.router import LLMRouter
-
-# Agents
-from src.agents.manager.manager_agent import ManagerAgent
-from src.agents.workers.db_agent import DBAgent
-
-# Tools
-from src.tools.database.db_tools import DBTool
-
-# Orchestration
-from src.core.orchestrator import Orchestrator
+from src.config import settings
+from src.core.app import build_orchestrator
 from src.core.task import Task
+from src.tools.database import DBTool
 
-from src.workflows.workflow_engine import WorkflowEngine
 
+def parse_metadata(values):
+    metadata = {}
+    for value in values or []:
+        if "=" not in value:
+            raise ValueError(f"Invalid metadata value '{value}'. Use key=value.")
+        key, raw = value.split("=", 1)
+        metadata[key] = raw
+    return metadata
 
 
 def main():
-    print("🚀 Starting ARKAGENTS...")
+    load_dotenv()
 
-    # Initialize infrastructure
-    llm_router = LLMRouter()
-    db_tool = DBTool()
+    parser = argparse.ArgumentParser(
+        description="ArkAgents AI Business Manager command line interface"
+    )
+    subparsers = parser.add_subparsers(dest="command")
 
-    # Initialize agents
-    db_agent = DBAgent(db_tool=db_tool, llm=llm_router)
-    registry = AgentRegistry()
-    registry.register("db", db_agent)
+    run_parser = subparsers.add_parser("run", help="Run a business automation task")
+    run_parser.add_argument("description", help="Task description")
+    run_parser.add_argument("--agent", help="Force a specific agent")
+    run_parser.add_argument("--meta", action="append", default=[], help="Task metadata as key=value")
+    run_parser.add_argument("--allow-db-writes", action="store_true", help="Allow insert/update/delete SQL")
+    run_parser.add_argument("--use-llm", action="store_true", help="Enable configured LLM providers for planning")
 
-    manager = ManagerAgent(registry=registry, llm=llm_router)
-    orchestrator = Orchestrator(manager)
-    workflow = WorkflowEngine(manager)
+    subparsers.add_parser("agents", help="List registered agents")
+    subparsers.add_parser("seed-db", help="Create demo customer data")
+    ui_parser = subparsers.add_parser("ui", help="Run the browser admin console")
+    ui_parser.add_argument("--host", default="127.0.0.1")
+    ui_parser.add_argument("--port", type=int, default=8000)
 
-    # Workflow task example
-    task = Task(description="Fetch users from DB", agent="db")
+    args = parser.parse_args()
+    command = args.command or "agents"
 
-    orchestrator_result = orchestrator.run(task)
-    print("Orchestrator Result:", orchestrator_result.to_dict())
+    if command == "ui":
+        from src.web.server import run
 
-    # Manager-level orchestration
-    manager_task = Task(description="Process user data", agent="db")
-    manager_result = manager.run(manager_task)
-    print("Manager Result:", manager_result)
+        run(host=args.host, port=args.port)
+        return
 
-    # Workflow example
-    # tasks = [
-    #     Task(description="Fetch leads", agent="db"),
-    #     Task(description="Save leads to database", agent="db")
-    # ]
-    tasks = Task(
-        description="Get all users from database"
+    if command == "seed-db":
+        result = DBTool(settings.DB_PATH, allow_writes=True).seed_demo_data()
+        print(json.dumps(result, indent=2))
+        return
+
+    orchestrator = build_orchestrator(
+        allow_db_writes=getattr(args, "allow_db_writes", False),
+        use_llm=getattr(args, "use_llm", False),
     )
 
-    workflow_results = workflow.run(tasks)
-    for r in workflow_results:
-        print("Workflow task result:", r.to_dict())
+    if command == "agents":
+        print(json.dumps(orchestrator.manager.registry.describe_agents(), indent=2))
+        return
 
-    print("\n📊 Final Result:\n", manager_result)
+    metadata = parse_metadata(args.meta)
+    task = Task(description=args.description, agent=args.agent, metadata=metadata)
+    result = orchestrator.run(task)
+    print(json.dumps(result.to_dict(), indent=2, default=str))
 
 
 if __name__ == "__main__":

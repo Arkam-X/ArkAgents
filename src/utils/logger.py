@@ -3,14 +3,9 @@ import sys
 
 
 def setup_logger(name: str = "ARKAGENTS"):
-    """
-    Setup logger
-    """
-
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
-    # Prevent duplicate logs
     if logger.handlers:
         return logger
 

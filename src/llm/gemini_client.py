@@ -1,39 +1,35 @@
 import os
-from google import genai
+from typing import Optional
 
 
 class GeminiClient:
-    """
-    Gemini Client
-    """
+    """Gemini client using google-genai when installed and configured."""
 
-    def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
-        if not self.api_key:
-            raise EnvironmentError("GEMINI_API_KEY is required")
+    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.5-flash"):
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+        self.model = os.getenv("GEMINI_MODEL", model)
+        self._client = None
 
-        try:
-            self.model = genai.GenerativeModel("gemini-2.5-flash")
-        except Exception:
-            self.model = None
+    @property
+    def available(self) -> bool:
+        return bool(self.api_key)
 
-    def generate(self, prompt: str):
+    def _load_client(self):
+        if self._client is not None:
+            return self._client
+        if not self.available:
+            raise EnvironmentError("GEMINI_API_KEY is not configured")
+        from google import genai
+
+        self._client = genai.Client(api_key=self.api_key)
+        return self._client
+
+    def generate(self, prompt: str) -> str:
+        if not self.available:
+            raise EnvironmentError("GEMINI_API_KEY is not configured")
         if not prompt:
             raise ValueError("Prompt must not be empty")
 
-        if self.model is None:
-            return "[Gemini fallback] Model unavailable"
-
-        try:
-            response = self.model.generate_content(prompt)
-
-            if hasattr(response, "text"):
-                return response.text
-
-            if isinstance(response, dict):
-                return response.get("text", "")
-
-            return "[Gemini fallback] unexpected response"
-        except Exception as e:
-            return f"[Gemini fallback] {str(e)}"
-
+        client = self._load_client()
+        response = client.models.generate_content(model=self.model, contents=prompt)
+        return getattr(response, "text", "") or ""

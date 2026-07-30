@@ -4,13 +4,16 @@ from typing import Optional
 import requests
 
 
-class OpenRouterClient:
-    """OpenRouter chat completions client."""
+class OpenAIClient:
+    """Small OpenAI Chat Completions client using requests."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "openai/gpt-4o-mini"):
-        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
-        self.model = os.getenv("OPENROUTER_MODEL", model)
-        self.base_url = "https://openrouter.ai/api/v1/chat/completions"
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o-mini"):
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.model = os.getenv("OPENAI_MODEL", model)
+        self.base_url = os.getenv(
+            "OPENAI_BASE_URL",
+            "https://api.openai.com/v1/chat/completions",
+        )
 
     @property
     def available(self) -> bool:
@@ -18,7 +21,7 @@ class OpenRouterClient:
 
     def generate(self, prompt: str) -> str:
         if not self.available:
-            raise EnvironmentError("OPENROUTER_API_KEY is not configured")
+            raise EnvironmentError("OPENAI_API_KEY is not configured")
         if not prompt:
             raise ValueError("Prompt must not be empty")
 
@@ -36,5 +39,5 @@ class OpenRouterClient:
             timeout=30,
         )
         response.raise_for_status()
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
+        payload = response.json()
+        return payload["choices"][0]["message"]["content"]

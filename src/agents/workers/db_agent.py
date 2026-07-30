@@ -1,14 +1,11 @@
-from typing import Dict, Any
-import json
+from typing import Any, Dict
 
 from src.agents.base.base_agent import BaseAgent
 from src.core.task import Task
 
 
 class DBAgent(BaseAgent):
-    """
-    Agentic Database Agent
-    """
+    """Database worker agent. SQL execution is delegated to DBTool."""
 
     def __init__(self, db_tool=None, llm=None):
         super().__init__(
@@ -17,115 +14,86 @@ class DBAgent(BaseAgent):
             tools=[db_tool] if db_tool else [],
             llm=llm
         )
-
         self.db_tool = db_tool
 
-    def discover_schema(self):
-        """
-        Discover database schema dynamically
-        """
+    def discover_schema(self) -> Dict[str, Any]:
+        return self.db_tool.describe_schema()
 
-        tables = self.db_tool.get_tables()
-
-        if isinstance(tables, dict) and "error" in tables:
-            raise RuntimeError(f"Failed to discover schema: {tables['error']}")
-
-        schema = {}
-
-        for table in tables:
-            table_name = table[0] if isinstance(table, (list, tuple)) else table
-            columns = self.db_tool.get_columns(table_name)
-            schema[table_name] = columns
-
-        return schema
-
-    def generate_sql(self, task: Task, schema):
-        """
-        Generate SQL using AI
-        """
+    def generate_sql(self, task: Task, schema: Dict[str, Any]) -> Dict[str, str]:
+        if task.metadata.get("sql"):
+            sql = task.metadata["sql"]
+            return {"sql": sql, "operation": sql.strip().split()[0].lower()}
 
         prompt = f"""
-You are a database expert.
+You are a database tool planner.
+Return only JSON with keys: sql, operation.
+Only produce one SQLite statement.
+Use SELECT unless the user explicitly asks to write data.
 
-Database Schema:
+Schema:
 {schema}
 
-Generate SQL query for the following request.
-
-Return JSON:
-
-{{
-    "sql": "SQL query",
-    "operation": "query/insert/update/delete"
-}}
-
-User Request:
+User request:
 {task.description}
 """
-
-        response = self.call_llm(prompt)
-
-        try:
-            decision = json.loads(response)
-        except Exception:
-            decision = {
-                "sql": "",
-                "operation": "query"
+        decision = None
+        if self.llm:
+            decision = self.llm.generate_json(prompt, task_type="reasoning", default=None)
+        if isinstance(decision, dict) and decision.get("sql"):
+            return {
+                "sql": str(decision["sql"]),
+                "operation": str(decision.get("operation", "query")).lower(),
             }
+        return self._fallback_sql(task, schema)
 
-        return decision
+    def _fallback_sql(self, task: Task, schema: Dict[str, Any]) -> Dict[str, str]:
+        description = task.description.lower()
+        tables = list(schema.keys())
+        table = "customer" if "customer" in tables else tables[0] if tables else ""
+        if not table:
+            return {"sql": "", "operation": "query"}
+
+        if "count" in description or "how many" in description:
+            return {"sql": f"SELECT COUNT(*) AS count FROM {table}", "operation": "query"}
+        if "schema" in description or "tables" in description:
+            return {"sql": "", "operation": "schema"}
+        if "total" in description and "price" in description:
+            return {
+                "sql": f"SELECT SUM(total_price) AS total_price FROM {table}",
+                "operation": "query",
+            }
+        return {"sql": f"SELECT * FROM {table} LIMIT 50", "operation": "query"}
 
     def run(self, task: Task):
-        """
-        Main Execution
-        """
-
         self.info("DB Agent started")
-
         task.set_status("running")
 
         if not self.db_tool:
-            error_msg = "DB tool is not configured"
-            self.error(error_msg)
-            task.set_status("failed")
-            task.set_result({"error": error_msg})
+            task.set_error("DB tool is not configured")
             return task.result
 
-        # Step 1: Discover schema
-        schema = self.discover_schema()
+        try:
+            schema = self.discover_schema()
+            decision = self.generate_sql(task, schema)
+            operation = decision.get("operation", "query")
+            sql = decision.get("sql", "")
 
-        self.info("Schema discovered")
+            if operation == "schema":
+                result = schema
+            elif operation in {"query", "select"}:
+                result = self.db_tool.query(sql)
+            elif operation == "insert":
+                result = self.db_tool.insert(sql)
+            elif operation == "update":
+                result = self.db_tool.update(sql)
+            elif operation == "delete":
+                result = self.db_tool.delete(sql)
+            else:
+                raise ValueError(f"Unknown database operation: {operation}")
 
-        # Step 2: Generate SQL
-        decision = self.generate_sql(task, schema)
-
-        sql = decision.get("sql")
-        operation = decision.get("operation")
-
-        self.info(f"Generated SQL: {sql}")
-
-        # Step 3: Execute SQL
-        if operation == "query":
-            result = self.db_tool.query(sql)
-
-        elif operation == "insert":
-            result = self.db_tool.insert(sql)
-
-        elif operation == "update":
-            result = self.db_tool.update(sql)
-
-        elif operation == "delete":
-            result = self.db_tool.delete(sql)
-
-        else:
-            result = {"error": "Unknown operation"}
-
-        task.set_result({
-            "agent": self.name,
-            "sql": sql,
-            "result": result
-        })
-
-        self.info("DB Agent finished")
-
+            task.set_result({"agent": self.name, "sql": sql, "result": result})
+            self.info("DB Agent finished")
+        except Exception as exc:
+            self.error(str(exc))
+            task.set_error(str(exc))
         return task.result
