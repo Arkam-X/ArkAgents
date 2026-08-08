@@ -5,6 +5,7 @@ const state = {
 };
 
 const el = {
+  appShell: document.getElementById("appShell"),
   apiStatus: document.getElementById("apiStatus"),
   llmStatus: document.getElementById("llmStatus"),
   agentCount: document.getElementById("agentCount"),
@@ -25,24 +26,34 @@ const el = {
   refreshButton: document.getElementById("refreshButton"),
   schemaButton: document.getElementById("schemaButton"),
   copyButton: document.getElementById("copyButton"),
+  templatesButton: document.getElementById("templatesButton"),
   runState: document.getElementById("runState"),
   schemaView: document.getElementById("schemaView"),
   jsonOutput: document.getElementById("jsonOutput"),
   resultTable: document.getElementById("resultTable"),
   tableEmpty: document.getElementById("tableEmpty"),
   timeline: document.getElementById("timeline"),
+  historyList: document.getElementById("historyList"),
+  templatesModal: document.getElementById("templatesModal"),
+  templatesList: document.getElementById("templatesList"),
   toast: document.getElementById("toast"),
 };
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
     ...options,
   });
+
   const data = await response.json();
+
   if (!response.ok) {
     throw new Error(data.error || "Request failed");
   }
+
   return data;
 }
 
@@ -181,33 +192,105 @@ function renderResult(payload) {
   renderTable(findRows(payload));
   renderTimeline(payload);
   setStatus(payload.status || "Completed", payload.status === "failed");
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!state.history.length) {
+    el.historyList.innerHTML = `<div class="empty-state">No tasks executed yet</div>`;
+    return;
+  }
+  el.historyList.innerHTML = state.history.map((item, index) => `
+    <article class="history-item">
+      <div class="history-main">
+        <strong>${escapeHtml(item.description || "Unknown task")}</strong>
+        <span class="history-meta">${escapeHtml(item.agent || "auto")} • ${new Date(item.timestamp).toLocaleString()}</span>
+      </div>
+      <span class="status-badge ${item.status === "completed" ? "success" : item.status === "failed" ? "error" : ""}">${escapeHtml(item.status)}</span>
+    </article>
+  `).join("");
+}
+
+function renderTemplates(templates) {
+  el.templatesList.innerHTML = Object.entries(templates).map(([name, tmpl]) => `
+    <article class="template-card">
+      <div class="template-header">
+        <strong>${escapeHtml(name)}</strong>
+      </div>
+      <div class="template-subject">Subject: ${escapeHtml(tmpl.subject)}</div>
+      <div class="template-preview">${escapeHtml(tmpl.body_preview)}</div>
+      <button class="ghost-button template-use" data-template="${escapeHtml(name)}">Use Template</button>
+    </article>
+  `).join("");
+
+  document.querySelectorAll(".template-use").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const templateName = btn.dataset.template;
+      el.taskInput.value = `Send email using ${templateName} template`;
+      el.metadataInput.value = `template=${templateName}\nvariables.contact_name=John Doe\nvariables.company_name=Acme Corp\nvariables.sender_name=Jane Smith`;
+      closeModal();
+      showToast(`Template "${templateName}" loaded. Fill in variables and run.`);
+    });
+  });
 }
 
 async function refresh() {
-  const [health, agents] = await Promise.all([
-    api("/api/health"),
-    api("/api/agents"),
-  ]);
-  el.apiStatus.textContent = health.status === "ok" ? "Online" : "Issue";
-  el.llmStatus.textContent = health.llm_enabled_by_default ? "Default on" : "Manual";
-  state.agents = agents;
-  renderAgents();
+  try {
+    const [health, agents] = await Promise.all([
+      api("/api/health"),
+      api("/api/agents"),
+    ]);
+
+    el.apiStatus.textContent =
+      health.status === "ok" ? "Online" : "Issue";
+
+    el.llmStatus.textContent =
+      health.llm_enabled_by_default ? "Default on" : "Manual";
+
+    state.agents = agents;
+    renderAgents();
+  } catch (error) {
+    el.apiStatus.textContent = "Offline";
+    showToast(error.message);
+  }
 }
 
 async function loadSchema() {
-  const dbPath = encodeURIComponent(el.dbPathInput.value.trim() || "arkagents.db");
-  const data = await api(`/api/schema?db_path=${dbPath}`);
-  renderSchema(data.schema);
-  showToast("Schema loaded");
+  try {
+    const dbPath = encodeURIComponent(el.dbPathInput.value.trim() || "arkagents.db");
+    const data = await api(`/api/schema?db_path=${dbPath}`);
+    renderSchema(data.schema);
+    showToast("Schema loaded");
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
 async function seedDb() {
-  const data = await api("/api/seed-db", {
-    method: "POST",
-    body: JSON.stringify({ db_path: el.dbPathInput.value.trim() || "arkagents.db" }),
-  });
-  showToast(`Seed complete: ${data.rows_available || 0} demo rows available`);
-  await loadSchema();
+  try {
+    const data = await api("/api/seed-db", {
+      method: "POST",
+      body: JSON.stringify({ db_path: el.dbPathInput.value.trim() || "arkagents.db" }),
+    });
+    showToast(`Seed complete: ${data.rows_available || 0} demo rows available`);
+    await loadSchema();
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function loadTemplates() {
+  try {
+    const data = await api("/api/templates");
+    renderTemplates(data);
+    el.templatesModal.style.display = "flex";
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+function closeModal() {
+  el.templatesModal.style.display = "none";
 }
 
 async function runTask() {
@@ -259,6 +342,14 @@ async function copyJson() {
 }
 
 function setActiveTab(name) {
+  document.querySelectorAll(".nav-item").forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === name);
+  });
+  document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("active"));
+  document.getElementById(name).classList.add("active");
+}
+
+function setResultTab(name) {
   document.querySelectorAll(".tab").forEach((button) => {
     button.classList.toggle("active", button.dataset.tab === name);
   });
@@ -268,15 +359,22 @@ function setActiveTab(name) {
 
 function escapeHtml(value) {
   return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
+    .replaceAll("&", "&")
+    .replaceAll("<", "<")
+    .replaceAll(">", ">")
+    .replaceAll('"', '"')
     .replaceAll("'", "&#039;");
 }
 
+document.querySelectorAll(".nav-item").forEach((button) => {
+  button.addEventListener("click", (e) => {
+    e.preventDefault();
+    setActiveTab(button.dataset.tab);
+  });
+});
+
 document.querySelectorAll(".tab").forEach((button) => {
-  button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+  button.addEventListener("click", () => setResultTab(button.dataset.tab));
 });
 
 el.runButton.addEventListener("click", runTask);
@@ -285,10 +383,14 @@ el.clearButton.addEventListener("click", clearOutput);
 el.refreshButton.addEventListener("click", () => refresh().then(() => showToast("Status refreshed")));
 el.schemaButton.addEventListener("click", loadSchema);
 el.copyButton.addEventListener("click", copyJson);
+el.templatesButton.addEventListener("click", loadTemplates);
 
-refresh()
-  .then(loadSchema)
-  .catch((error) => {
-    el.apiStatus.textContent = "Offline";
-    showToast(error.message);
-  });
+document.querySelector(".modal-close").addEventListener("click", closeModal);
+el.templatesModal.querySelector(".modal-overlay").addEventListener("click", closeModal);
+
+// Start dashboard immediately — no authentication required.
+el.appShell.style.display = "grid";
+
+refresh().catch((error) => {
+  console.error("Dashboard startup error:", error);
+});

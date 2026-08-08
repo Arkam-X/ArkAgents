@@ -551,6 +551,173 @@ pre {
   gap: 4px;
 }
 
+.history-list {
+  display: grid;
+  gap: 8px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-2);
+}
+
+.history-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.history-meta {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-badge.success {
+  background: #e8f7ef;
+  color: var(--color-success);
+}
+
+.status-badge.error {
+  background: #fff1ed;
+  color: var(--color-danger);
+}
+
+.status-badge.running {
+  background: #eef2ff;
+  color: var(--color-primary);
+}
+
+.login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow);
+}
+
+.user-details strong {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.user-details span {
+  color: #8da2bf;
+  font-size: 11px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 18, 32, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.modal-close:hover {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.template-card {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: var(--color-surface-2);
+}
+
+.template-header {
+  margin-bottom: 8px;
+}
+
+.template-subject {
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.template-preview {
+  color: var(--color-muted);
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
 .toast {
   position: fixed;
   right: 20px;

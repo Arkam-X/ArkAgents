@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
+import uuid
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
 
 from dotenv import load_dotenv
@@ -15,9 +17,24 @@ from src.core.app import build_orchestrator
 from src.core.task import Task
 from src.tools.database import DBTool
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = PROJECT_ROOT / "web"
+
+TASK_HISTORY: List[Dict[str, Any]] = []
+
+
+def add_to_history(task_result: Dict[str, Any]) -> None:
+    entry = {
+        "id": str(uuid.uuid4()),
+        "timestamp": datetime.now().isoformat(),
+        "description": task_result.get("description", ""),
+        "agent": task_result.get("agent", "auto"),
+        "status": task_result.get("status", "unknown"),
+        "result_summary": str(task_result.get("result", {}))[:200],
+    }
+    TASK_HISTORY.insert(0, entry)
+    if len(TASK_HISTORY) > 100:
+        TASK_HISTORY.pop()
 
 
 class ArkAgentsWebHandler(BaseHTTPRequestHandler):
@@ -25,14 +42,13 @@ class ArkAgentsWebHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+
         if parsed.path == "/api/health":
-            self.write_json(
-                {
-                    "status": "ok",
-                    "project": "ArkAgents",
-                    "llm_enabled_by_default": settings.ENABLE_LLM,
-                }
-            )
+            self.write_json({
+                "status": "ok",
+                "project": "ArkAgents",
+                "llm_enabled_by_default": settings.ENABLE_LLM,
+            })
             return
 
         if parsed.path == "/api/agents":
@@ -47,6 +63,14 @@ class ArkAgentsWebHandler(BaseHTTPRequestHandler):
                 self.write_json({"schema": DBTool(db_path).describe_schema()})
             except Exception as exc:
                 self.write_json({"error": str(exc)}, status=400)
+            return
+
+        if parsed.path == "/api/history":
+            self.write_json({"history": TASK_HISTORY[:50]})
+            return
+
+        if parsed.path == "/api/ws":
+            self.handle_websocket()
             return
 
         self.serve_static(parsed.path)
@@ -66,6 +90,12 @@ class ArkAgentsWebHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/run":
             self.run_task(payload)
+            return
+
+        if parsed.path == "/api/templates":
+            from src.agents.workers.email_agent import EmailAgent
+            agent = EmailAgent()
+            self.write_json(agent.list_templates())
             return
 
         self.write_json({"error": "Endpoint not found"}, status=404)
@@ -89,7 +119,10 @@ class ArkAgentsWebHandler(BaseHTTPRequestHandler):
                 use_llm=use_llm,
             )
             result = orchestrator.run(Task(description=description, agent=agent, metadata=metadata))
-            self.write_json(result.to_dict())
+            result_dict = result.to_dict()
+            add_to_history(result_dict)
+            asyncio.create_task(broadcast_ws({"type": "task_complete", "result": result_dict}))
+            self.write_json(result_dict)
         except Exception as exc:
             self.write_json({"error": str(exc)}, status=500)
 

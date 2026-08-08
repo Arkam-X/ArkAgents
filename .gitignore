@@ -10,3 +10,5 @@ arkagents.db
 .test_tmp/
 memory.jsonl
 skills/
+.pytest_cache/
+.test_tmp/

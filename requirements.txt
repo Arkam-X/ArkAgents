@@ -4,3 +4,7 @@ python-dotenv
 pandas
 openpyxl
 pytest
+matplotlib
+twilio
+websockets
+Faker
