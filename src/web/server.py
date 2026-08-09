@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from urllib.parse import parse_qs, urlparse
 
 from dotenv import load_dotenv
@@ -69,10 +69,6 @@ class ArkAgentsWebHandler(BaseHTTPRequestHandler):
             self.write_json({"history": TASK_HISTORY[:50]})
             return
 
-        if parsed.path == "/api/ws":
-            self.handle_websocket()
-            return
-
         self.serve_static(parsed.path)
 
     def do_POST(self) -> None:
@@ -121,7 +117,6 @@ class ArkAgentsWebHandler(BaseHTTPRequestHandler):
             result = orchestrator.run(Task(description=description, agent=agent, metadata=metadata))
             result_dict = result.to_dict()
             add_to_history(result_dict)
-            asyncio.create_task(broadcast_ws({"type": "task_complete", "result": result_dict}))
             self.write_json(result_dict)
         except Exception as exc:
             self.write_json({"error": str(exc)}, status=500)

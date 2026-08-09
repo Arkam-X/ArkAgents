@@ -3,10 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ArkAgents Operations Console</title>
+    <title>ArkAgents // Y2K Operations Dashboard</title>
     <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
   </head>
   <body>
+    <div class="scanlines"></div>
+    <div class="crt-glow"></div>
+    
     <svg class="icon-sprite" aria-hidden="true">
       <symbol id="icon-send" viewBox="0 0 24 24">
         <path d="M22 2 11 13"></path><path d="m22 2-7 20-4-9-9-4 20-7Z"></path>
@@ -26,252 +32,240 @@
       <symbol id="icon-refresh" viewBox="0 0 24 24">
         <path d="M21 12a9 9 0 0 1-15.5 6.2"></path><path d="M3 12A9 9 0 0 1 18.5 5.8"></path><path d="M3 19v-6h6"></path><path d="M21 5v6h-6"></path>
       </symbol>
-      <symbol id="icon-settings" viewBox="0 0 24 24">
-        <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.3 7A2 2 0 1 1 7.1 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 1 1 19.9 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.7 1Z"></path>
-      </symbol>
-      <symbol id="icon-user" viewBox="0 0 24 24">
-        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
-      </symbol>
-      <symbol id="icon-logout" viewBox="0 0 24 24">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></path><line x1="21" y1="12" x2="9" y2="12"></line>
-      </symbol>
       <symbol id="icon-history" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
       </symbol>
       <symbol id="icon-template" viewBox="0 0 24 24">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>
       </symbol>
+      <symbol id="icon-terminal" viewBox="0 0 24 24">
+        <polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line>
+      </symbol>
+      <symbol id="icon-alert" viewBox="0 0 24 24">
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </symbol>
+      <symbol id="icon-x" viewBox="0 0 24 24">
+        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+      </symbol>
+      <symbol id="icon-cpu" viewBox="0 0 24 24">
+        <rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line>
+      </symbol>
     </svg>
 
-    <div id="appShell" class="shell">
-      <aside class="sidebar" aria-label="Primary">
-        <div class="brand">
-          <div class="brand-mark">A</div>
-          <div>
-            <div class="brand-name">ArkAgents</div>
-            <div class="brand-subtitle">Operations Console</div>
+    <div class="y2k-wrapper">
+      <!-- TOP BAR -->
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <div class="logo-block">
+            <span class="logo-glyph">[ARK]</span>
+            <span class="logo-text">AGENTS</span>
+          </div>
+          <div class="version-badge">v2.6.0</div>
+          <div class="status-indicators">
+            <span class="status-dot online" id="apiStatusDot"></span>
+            <span class="status-label" id="apiStatusText">CONNECTING</span>
+            <span class="separator">|</span>
+            <span class="status-dot" id="llmStatusDot"></span>
+            <span class="status-label" id="llmStatusText">MANUAL</span>
+            <span class="separator">|</span>
+            <span class="status-dot warning" id="guardStatusDot"></span>
+            <span class="status-label">WRITES OFF</span>
           </div>
         </div>
-
-        <nav class="nav">
-          <a class="nav-item active" href="#command" data-tab="command">Command</a>
-          <a class="nav-item" href="#database" data-tab="database">Database</a>
-          <a class="nav-item" href="#agents" data-tab="agents">Agents</a>
-          <a class="nav-item" href="#history" data-tab="history">History</a>
-          <a class="nav-item" href="#results" data-tab="results">Results</a>
-        </nav>
-
-        <div class="side-panel">
-          <div class="panel-label">Runtime</div>
-          <div class="runtime-row">
-            <span>API</span>
-            <strong id="apiStatus">Checking</strong>
-          </div>
-          <div class="runtime-row">
-            <span>LLM</span>
-            <strong id="llmStatus">Manual</strong>
-          </div>
-          <div class="runtime-row">
-            <span>Guard</span>
-            <strong>Writes off</strong>
-          </div>
+        <div class="top-bar-right">
+          <div class="clock" id="systemClock">00:00:00</div>
         </div>
-      </aside>
+      </header>
 
-      <main class="workspace">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">Back Office Control Plane</p>
-            <h1>Agent command center</h1>
+      <!-- MAIN GRID -->
+      <main class="main-grid">
+        <!-- LEFT PANEL: COMMAND -->
+        <section class="panel command-panel" id="commandPanel">
+          <div class="panel-header">
+            <h2 class="panel-title">[ COMMAND INTERFACE ]</h2>
+            <span class="panel-status" id="runState">READY</span>
           </div>
-          <div class="topbar-actions">
-            <button class="icon-button" id="refreshButton" type="button" aria-label="Refresh status" title="Refresh status">
-              <svg><use href="#icon-refresh"></use></svg>
-            </button>
-            <button class="ghost-button" id="seedButton" type="button">
-              <svg><use href="#icon-database"></use></svg>
-              Seed demo DB
-            </button>
-            <button class="ghost-button" id="templatesButton" type="button">
-              <svg><use href="#icon-template"></use></svg>
-              Templates
-            </button>
-          </div>
-        </header>
 
-        <section class="metrics" aria-label="System metrics">
-          <article class="metric-card">
-            <span>Registered agents</span>
-            <strong id="agentCount">0</strong>
-          </article>
-          <article class="metric-card">
-            <span>Tasks run</span>
-            <strong id="taskCount">0</strong>
-          </article>
-          <article class="metric-card">
-            <span>Last status</span>
-            <strong id="lastStatus">Idle</strong>
-          </article>
-          <article class="metric-card">
-            <span>Rows returned</span>
-            <strong id="rowCount">0</strong>
-          </article>
+          <div class="terminal-window">
+            <div class="terminal-header">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+              <span class="terminal-title">COMMAND_PROMPT.EXE</span>
+            </div>
+            <div class="terminal-body">
+              <label class="field">
+                <span class="field-label">> INSTRUCTION</span>
+                <textarea id="taskInput" rows="4" spellcheck="true" placeholder="ENTER TASK DESCRIPTION...">GET CUSTOMER COUNT FROM DATABASE</textarea>
+              </label>
+
+              <div class="field-row">
+                <label class="field half">
+                  <span class="field-label">> AGENT</span>
+                  <select id="agentSelect">
+                    <option value="">AUTO_ROUTE</option>
+                  </select>
+                </label>
+                <label class="field half">
+                  <span class="field-label">> DB PATH</span>
+                  <input id="dbPathInput" value="arkagents.db" autocomplete="off">
+                </label>
+              </div>
+
+              <label class="field">
+                <span class="field-label">> SQL OVERRIDE</span>
+                <input id="sqlInput" placeholder="SELECT COUNT(*) AS COUNT FROM CUSTOMER">
+              </label>
+
+              <label class="field">
+                <span class="field-label">> METADATA (KEY=VALUE PER LINE)</span>
+                <textarea id="metadataInput" rows="3" placeholder="TO=CLIENT@EXAMPLE.COM&#10;SUBJECT=PROPOSAL&#10;TEMPLATE=PROPOSAL"></textarea>
+              </label>
+
+              <div class="toggle-grid">
+                <label class="toggle">
+                  <input id="useLlmInput" type="checkbox">
+                  <span>LLM PLANNER [EXPERIMENTAL]</span>
+                </label>
+                <label class="toggle danger">
+                  <input id="allowWritesInput" type="checkbox">
+                  <span>ENABLE DB WRITES [!]</span>
+                </label>
+              </div>
+
+              <div class="button-row">
+                <button class="btn-primary" id="runButton" type="button">
+                  <svg><use href="#icon-send"></use></svg>
+                  <span>EXECUTE</span>
+                </button>
+                <button class="btn-secondary" id="clearButton" type="button">
+                  <svg><use href="#icon-x"></use></svg>
+                  <span>CLEAR</span>
+                </button>
+                <button class="btn-tertiary" id="templatesButton" type="button">
+                  <svg><use href="#icon-template"></use></svg>
+                  <span>TEMPLATES</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <div class="grid">
-          <section class="panel command-panel" id="command" data-panel="command">
+        <!-- RIGHT PANEL: STACKED -->
+        <div class="right-stack">
+          <!-- DATABASE PANEL -->
+          <section class="panel db-panel" id="databasePanel">
             <div class="panel-header">
-              <div>
-                <p class="eyebrow">Command</p>
-                <h2>Dispatch a task</h2>
-              </div>
-              <span class="status-pill" id="runState">Ready</span>
-            </div>
-
-            <label class="field">
-              <span>Instruction</span>
-              <textarea id="taskInput" rows="5" spellcheck="true" placeholder="Describe what you want the agents to do...">Get customer count from database</textarea>
-            </label>
-
-            <div class="form-grid">
-              <label class="field">
-                <span>Agent</span>
-                <select id="agentSelect">
-                  <option value="">Auto route</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Database path</span>
-                <input id="dbPathInput" value="arkagents.db" autocomplete="off">
-              </label>
-            </div>
-
-            <label class="field">
-              <span>SQL override</span>
-              <input id="sqlInput" placeholder="SELECT COUNT(*) AS count FROM customer">
-            </label>
-
-            <label class="field">
-              <span>Metadata (key=value per line)</span>
-              <textarea id="metadataInput" rows="4" placeholder="to=client@example.com&#10;subject=Proposal&#10;template=proposal&#10;variables.company_name=Acme Corp"></textarea>
-            </label>
-
-            <div class="toggle-grid" aria-label="Execution controls">
-              <label class="toggle">
-                <input id="useLlmInput" type="checkbox">
-                <span>Use LLM planner</span>
-              </label>
-              <label class="toggle danger">
-                <input id="allowWritesInput" type="checkbox">
-                <span>Allow DB writes</span>
-              </label>
-            </div>
-
-            <div class="button-row">
-              <button class="primary-button" id="runButton" type="button">
-                <svg><use href="#icon-send"></use></svg>
-                Run task
-              </button>
-              <button class="ghost-button" id="clearButton" type="button">Clear</button>
-            </div>
-          </section>
-
-          <section class="panel" id="database" data-panel="database">
-            <div class="panel-header">
-              <div>
-                <p class="eyebrow">Database</p>
-                <h2>Access scope</h2>
-              </div>
-              <button class="icon-button" id="schemaButton" type="button" aria-label="Load schema" title="Load schema">
+              <h2 class="panel-title">[ DATABASE ACCESS ]</h2>
+              <button class="icon-btn" id="schemaButton" title="LOAD SCHEMA">
                 <svg><use href="#icon-database"></use></svg>
               </button>
             </div>
-            <div class="security-strip">
-              <svg><use href="#icon-shield"></use></svg>
-              <span>Writes require explicit approval per request.</span>
+            <div class="warning-banner">
+              <svg><use href="#icon-alert"></use></svg>
+              <span>WRITE OPERATIONS REQUIRE EXPLICIT APPROVAL</span>
             </div>
             <div id="schemaView" class="schema-view">
-              <div class="empty-state">No schema loaded</div>
+              <div class="empty-state">[ NO SCHEMA LOADED ]</div>
             </div>
           </section>
 
-          <section class="panel" id="agents" data-panel="agents">
+          <!-- AGENTS PANEL -->
+          <section class="panel agents-panel" id="agentsPanel">
             <div class="panel-header">
-              <div>
-                <p class="eyebrow">Agents</p>
-                <h2>Worker roster</h2>
-              </div>
-              <svg class="header-icon"><use href="#icon-bolt"></use></svg>
+              <h2 class="panel-title">[ AGENT ROSTER ]</h2>
+              <span class="agent-count" id="agentCount">0</span>
             </div>
-            <div id="agentList" class="agent-list"></div>
+            <div id="agentList" class="agent-grid"></div>
           </section>
 
-          <section class="panel" id="history" data-panel="history">
+          <!-- HISTORY PANEL -->
+          <section class="panel history-panel" id="historyPanel">
             <div class="panel-header">
-              <div>
-                <p class="eyebrow">History</p>
-                <h2>Task execution history</h2>
-              </div>
-              <svg class="header-icon"><use href="#icon-history"></use></svg>
-            </div>
-            <div id="historyList" class="history-list">
-              <div class="empty-state">No tasks executed yet</div>
-            </div>
-          </section>
-
-          <section class="panel results-panel" id="results" data-panel="results">
-            <div class="panel-header">
-              <div>
-                <p class="eyebrow">Results</p>
-                <h2>Execution output</h2>
-              </div>
-              <button class="icon-button" id="copyButton" type="button" aria-label="Copy JSON" title="Copy JSON">
-                <svg><use href="#icon-copy"></use></svg>
+              <h2 class="panel-title">[ EXECUTION LOG ]</h2>
+              <button class="icon-btn" id="clearHistoryBtn" title="CLEAR HISTORY">
+                <svg><use href="#icon-x"></use></svg>
               </button>
             </div>
-
-            <div class="tabs" role="tablist">
-              <button class="tab active" data-tab="table" type="button">Table</button>
-              <button class="tab" data-tab="json" type="button">JSON</button>
-              <button class="tab" data-tab="timeline" type="button">Timeline</button>
-            </div>
-
-            <div class="tab-panel active" id="tablePanel">
-              <div class="table-wrap">
-                <table id="resultTable">
-                  <thead></thead>
-                  <tbody></tbody>
-                </table>
-              </div>
-              <div id="tableEmpty" class="empty-state">Run a task to populate results</div>
-            </div>
-
-            <div class="tab-panel" id="jsonPanel">
-              <pre id="jsonOutput">{}</pre>
-            </div>
-
-            <div class="tab-panel" id="timelinePanel">
-              <div id="timeline" class="timeline"></div>
+            <div id="historyList" class="history-list">
+              <div class="empty-state">[ NO EXECUTIONS RECORDED ]</div>
             </div>
           </section>
         </div>
+
+        <!-- BOTTOM PANEL: RESULTS -->
+        <section class="panel results-panel" id="resultsPanel">
+          <div class="panel-header">
+            <h2 class="panel-title">[ OUTPUT BUFFER ]</h2>
+            <div class="tabs" role="tablist">
+              <button class="tab active" data-tab="table" type="button">
+                <svg><use href="#icon-terminal"></use></svg>
+                TABLE
+              </button>
+              <button class="tab" data-tab="json" type="button">
+                <svg><use href="#icon-copy"></use></svg>
+                JSON
+              </button>
+              <button class="tab" data-tab="timeline" type="button">
+                <svg><use href="#icon-history"></use></svg>
+                TIMELINE
+              </button>
+            </div>
+          </div>
+
+          <div class="tab-panel active" id="tablePanel">
+            <div class="table-wrap">
+              <table id="resultTable">
+                <thead></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div id="tableEmpty" class="empty-state">[ AWAITING EXECUTION... ]</div>
+          </div>
+
+          <div class="tab-panel" id="jsonPanel">
+            <pre id="jsonOutput">{}</pre>
+            <button class="btn-copy" id="copyButton">
+              <svg><use href="#icon-copy"></use></svg>
+              COPY JSON
+            </button>
+          </div>
+
+          <div class="tab-panel" id="timelinePanel">
+            <div id="timeline" class="timeline">
+              <div class="empty-state">[ NO SUBTASKS ]</div>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <!-- FOOTER -->
+      <footer class="footer-bar">
+        <span class="footer-left">ARKAGENTS // AI BUSINESS MANAGER // Y2K EDITION</span>
+        <span class="footer-right">LOCAL OPS MODE // DIRECT HTTP API // SINGLE-USER DEV</span>
+      </footer>
     </div>
 
-    <div id="templatesModal" class="modal" style="display:none;">
+    <!-- TEMPLATES MODAL -->
+    <div id="templatesModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modal-overlay"></div>
-      <div class="modal-content">
+      <div class="modal-window">
         <div class="modal-header">
-          <h3>Email Templates</h3>
-          <button class="icon-button modal-close" aria-label="Close">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          <h3 id="modalTitle">EMAIL TEMPLATES</h3>
+          <button class="modal-close" aria-label="CLOSE">
+            <svg><use href="#icon-x"></use></svg>
           </button>
         </div>
         <div class="modal-body" id="templatesList"></div>
       </div>
     </div>
 
+    <!-- TOAST -->
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
     <script src="/app.js" defer></script>
   </body>
 </html>

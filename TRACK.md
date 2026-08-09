@@ -161,36 +161,32 @@ ArkAgents - Multi-Agent AI Business Manager with hierarchical agent architecture
 ### Frontend - Web UI **✨ MAJOR ENHANCEMENT**
 
 #### `src/web/server.py` **✨ ENHANCED**
-- **Purpose**: HTTP server with auth, WebSocket, static files
-- **New Endpoints**:
-  - `GET /api/auth/me` - session check
-  - `POST /api/auth/login` - returns token, sets cookie
-  - `POST /api/auth/logout` - invalidates session
-  - `GET /api/history` - task history
-  - `GET /api/templates` - email templates
-  - `GET /api/ws` - WebSocket for live updates
-- **Auth**: `require_auth()` checks Bearer token or Cookie
-- **Broadcast**: `broadcast_ws()` pushes updates to connected clients
-- **History**: `add_to_history()` stores last 100 tasks
+- **Purpose**: Lightweight local HTTP server, JSON API, static UI hosting
+- **Current Endpoints**:
+  - `GET /api/health` - server and LLM default status
+  - `GET /api/agents` - registered agent descriptions
+  - `GET /api/schema?db_path=...` - database schema inspection
+  - `GET /api/history` - in-memory task history
+  - `POST /api/seed-db` - seed demo database data
+  - `POST /api/run` - execute a task through the orchestrator
+  - `POST /api/templates` - list email templates
+- **History**: `add_to_history()` stores the last 100 local tasks
 
 #### `web/index.html` **✨ ENHANCED**
 - **New Features**:
-  - Login screen (admin/admin123)
+  - Y2K Operations Dashboard layout
   - History panel with task log
   - Email Templates modal
-  - WebSocket status indicator
-  - User avatar + logout in sidebar
-  - Templates button in topbar
+  - Agent roster, schema view, terminal-style command console
+  - Direct HTTP API calls only
 
 #### `web/app.js` **✨ ENHANCED**
 - **New Features**:
-  - Auth state management (localStorage token)
-  - Login/logout flow
-  - WebSocket connection with auto-reconnect
-  - Live task updates via WS
+  - Direct API calls with no login flow
+  - Local task history rendering
   - History rendering
   - Templates modal with "Use Template" buttons
-  - Tab navigation for panels
+  - Table/JSON/timeline result tabs
 
 #### `web/styles.css` **✨ ENHANCED**
 - **New Styles**: Login screen, history items, status badges, modal, template cards, user info, responsive tweaks
@@ -200,7 +196,7 @@ ArkAgents - Multi-Agent AI Business Manager with hierarchical agent architecture
 ### Configuration Files
 
 #### `requirements.txt` **✨ UPDATED**
-- Added: `matplotlib`, `twilio`, `websockets`
+- Added: `matplotlib`, `twilio`
 
 #### `.env.example` **✨ UPDATED**
 - Added voice provider credentials
@@ -257,7 +253,7 @@ Manager aggregates → Task.result
     ↓
 Orchestrator returns Task
     ↓
-UI updates via WebSocket
+UI updates from direct HTTP task responses
 ```
 
 ---

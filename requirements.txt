@@ -6,5 +6,4 @@ openpyxl
 pytest
 matplotlib
 twilio
-websockets
 Faker
